@@ -17,10 +17,22 @@ with the SerDe API in Hive 2.3 should also work well with Pixels SerDe.
 
 Currently, Pixels Hive SerDe only supports HDFS as the underlying storage.
 
+## Build
+
+This project can be opened as a maven project in Intellij and built using maven.
+
+However, [Pixels](https://github.com/pixelsdb/pixels) is the parent of this project,
+therefore use `mvn install` to install Pixels modules into your local maven repository,
+before building this project.
+
 ## Use Pixels in Hive
 
 Build pixels-hive using `mvn package`. Find the `pixels-hive-*-full.jar` under the `target` directory.
 This is the SerDe that can be used in Hive.
+
+Ensure that Pixels and other prerequisites are installed following the instructions
+[here](https://github.com/pixelsdb/pixels#installation-in-aws). Presto is not needed as we use Hive
+instead as the query engine.
 
 ### Load Pixels SerDe
 There are two options to load Pixels SerDe in Hive:
