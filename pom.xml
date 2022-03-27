@@ -64,12 +64,14 @@
             <artifactId>hive-serde</artifactId>
             <version>${dep.hive.version}</version>
             <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-exec</artifactId>
             <version>${dep.hive.version}</version>
             <optional>true</optional>
+            <scope>provided</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.pentaho</groupId>
@@ -81,21 +83,17 @@
         <!-- hadoop -->
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
-            <version>${dep.hadoop.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-hdfs</artifactId>
-            <version>${dep.hadoop.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
             <version>${dep.hadoop.version}</version>
             <optional>true</optional>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-mapreduce-client-core</artifactId>
+            <version>${dep.hadoop.version}</version>
+            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
