@@ -41,7 +41,7 @@ public class PixelsValue
                                                int row,
                                                Object previous)
     {
-        if (vector.isRepeating)
+        if (vector.isRepeating())
         {
             row = 0;
         }
@@ -67,7 +67,7 @@ public class PixelsValue
                                  int row,
                                  Object previous)
     {
-        if (vector.isRepeating)
+        if (vector.isRepeating())
         {
             row = 0;
         }
@@ -93,7 +93,7 @@ public class PixelsValue
                                    int row,
                                    Object previous)
     {
-        if (vector.isRepeating)
+        if (vector.isRepeating())
         {
             row = 0;
         }
@@ -119,7 +119,7 @@ public class PixelsValue
                                int row,
                                Object previous)
     {
-        if (vector.isRepeating)
+        if (vector.isRepeating())
         {
             row = 0;
         }
@@ -145,7 +145,7 @@ public class PixelsValue
                                  int row,
                                  Object previous)
     {
-        if (vector.isRepeating)
+        if (vector.isRepeating())
         {
             row = 0;
         }
@@ -171,7 +171,7 @@ public class PixelsValue
                                    int row,
                                    Object previous)
     {
-        if (vector.isRepeating)
+        if (vector.isRepeating())
         {
             row = 0;
         }
@@ -197,7 +197,7 @@ public class PixelsValue
                                      int row,
                                      Object previous)
     {
-        if (vector.isRepeating)
+        if (vector.isRepeating())
         {
             row = 0;
         }
@@ -223,7 +223,7 @@ public class PixelsValue
                            int row,
                            Object previous)
     {
-        if (vector.isRepeating)
+        if (vector.isRepeating())
         {
             row = 0;
         }
@@ -251,7 +251,7 @@ public class PixelsValue
                                     int row,
                                     Object previous)
     {
-        if (vector.isRepeating)
+        if (vector.isRepeating())
         {
             row = 0;
         }
@@ -278,7 +278,7 @@ public class PixelsValue
                                  int row,
                                  Object previous)
     {
-        if (vector.isRepeating)
+        if (vector.isRepeating())
         {
             row = 0;
         }
@@ -306,7 +306,7 @@ public class PixelsValue
                                            TypeDescription schema,
                                            Object previous)
     {
-        if (vector.isRepeating)
+        if (vector.isRepeating())
         {
             row = 0;
         }

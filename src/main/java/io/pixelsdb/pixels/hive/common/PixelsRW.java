@@ -433,7 +433,7 @@ public class PixelsRW
                         .setPixelStride(opts.getRowIndexStride())
                         .setRowGroupSize(opts.getRowIndexStride())
                         .setStorage(new HDFS(fs, opts.getConfiguration()))
-                        .setFilePath(path.toString())
+                        .setPath(path.toString())
                         .setBlockSize(opts.getBlockSize())
                         .setReplication(opts.getBlockReplication())
                         .setBlockPadding(opts.getBlockPadding())
