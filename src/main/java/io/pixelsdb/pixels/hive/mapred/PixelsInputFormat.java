@@ -21,9 +21,10 @@ package io.pixelsdb.pixels.hive.mapred;
 
 import com.alibaba.fastjson.JSON;
 import io.etcd.jetcd.KeyValue;
+import io.pixelsdb.pixels.common.layout.*;
+import io.pixelsdb.pixels.common.metadata.SchemaTableName;
 import io.pixelsdb.pixels.common.metadata.domain.*;
 import io.pixelsdb.pixels.common.physical.storage.HDFS;
-import io.pixelsdb.pixels.common.layout.*;
 import io.pixelsdb.pixels.common.utils.ConfigFactory;
 import io.pixelsdb.pixels.common.utils.Constants;
 import io.pixelsdb.pixels.common.utils.EtcdUtil;
@@ -36,7 +37,6 @@ import io.pixelsdb.pixels.daemon.metadata.dao.TableDao;
 import io.pixelsdb.pixels.hive.common.PixelsRW;
 import io.pixelsdb.pixels.hive.common.PixelsSplit;
 import io.pixelsdb.pixels.hive.common.PixelsStruct;
-import io.pixelsdb.pixels.hive.common.SchemaTableName;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -171,7 +171,7 @@ public class PixelsInputFormat
         {
             // get index
             int version = layout.getVersion();
-            IndexName indexName = new IndexName(st.getSchemaName(), st.getTableName());
+            SchemaTableName schemaTableName = new SchemaTableName(st.getSchemaName(), st.getTableName());
             Order order = JSON.parseObject(layout.getOrder(), Order.class);
             ColumnSet columnSet = new ColumnSet();
             for (String columnName : includedColumns)
@@ -188,18 +188,18 @@ public class PixelsInputFormat
             }
             else
             {
-                SplitsIndex splitsIndex = IndexFactory.Instance().getSplitsIndex(indexName);
+                SplitsIndex splitsIndex = IndexFactory.Instance().getSplitsIndex(schemaTableName);
                 if (splitsIndex == null)
                 {
                     log.debug("splits index not exist in factory, building index...");
-                    splitsIndex = buildSplitsIndex(order, splits, indexName);
+                    splitsIndex = buildSplitsIndex(order, splits, schemaTableName);
                 }
                 else
                 {
                     int indexVersion = splitsIndex.getVersion();
                     if (indexVersion < version) {
                         log.debug("splits index is expired, building new index...");
-                        splitsIndex = buildSplitsIndex(order, splits, indexName);
+                        splitsIndex = buildSplitsIndex(order, splits, schemaTableName);
                     }
                 }
 
@@ -213,12 +213,12 @@ public class PixelsInputFormat
             String compactPath;
             if (projectionReadEnabled)
             {
-                ProjectionsIndex projectionsIndex = IndexFactory.Instance().getProjectionsIndex(indexName);
+                ProjectionsIndex projectionsIndex = IndexFactory.Instance().getProjectionsIndex(schemaTableName);
                 Projections projections = JSON.parseObject(layout.getProjections(), Projections.class);
                 if (projectionsIndex == null)
                 {
                     log.debug("projections index not exist in factory, building index...");
-                    projectionsIndex = buildProjectionsIndex(order, projections, indexName);
+                    projectionsIndex = buildProjectionsIndex(order, projections, schemaTableName);
                 }
                 else
                 {
@@ -226,7 +226,7 @@ public class PixelsInputFormat
                     if (indexVersion < version)
                     {
                         log.debug("projections index is not up-to-date, updating index...");
-                        projectionsIndex = buildProjectionsIndex(order, projections, indexName);
+                        projectionsIndex = buildProjectionsIndex(order, projections, schemaTableName);
                     }
                 }
                 ProjectionPattern projectionPattern = projectionsIndex.search(columnSet);
@@ -377,19 +377,19 @@ public class PixelsInputFormat
         return pixelsSplits.toArray(new PixelsSplit[pixelsSplits.size()]);
     }
 
-    private SplitsIndex buildSplitsIndex(Order order, Splits splits, IndexName indexName) {
+    private SplitsIndex buildSplitsIndex(Order order, Splits splits, SchemaTableName schemaTableName) {
         List<String> columnOrder = order.getColumnOrder();
         SplitsIndex index;
         index = new InvertedSplitsIndex(columnOrder, SplitPattern.buildPatterns(columnOrder, splits), splits.getNumRowGroupInBlock());
-        IndexFactory.Instance().cacheSplitsIndex(indexName, index);
+        IndexFactory.Instance().cacheSplitsIndex(schemaTableName, index);
         return index;
     }
 
-    private ProjectionsIndex buildProjectionsIndex(Order order, Projections projections, IndexName indexName) {
+    private ProjectionsIndex buildProjectionsIndex(Order order, Projections projections, SchemaTableName schemaTableName) {
         List<String> columnOrder = order.getColumnOrder();
         ProjectionsIndex index;
         index = new InvertedProjectionsIndex(columnOrder, ProjectionPattern.buildPatterns(columnOrder, projections));
-        IndexFactory.Instance().cacheProjectionsIndex(indexName, index);
+        IndexFactory.Instance().cacheProjectionsIndex(schemaTableName, index);
         return index;
     }
 
