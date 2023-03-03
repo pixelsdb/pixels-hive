@@ -67,10 +67,10 @@ and `table_name` with the right schema and table name in Pixels.
 when the table is dropped.
 
 ### Load Data
-Load data by `pixels-load`. Then it is ready to execute queries in Hive.
+Load data by `pixels-sink`. Then it is ready to execute queries in Hive.
 Currently, we have only implemented `PixelsInputFormat` for Hive,
-therefore data can not be loaded through Hive's `LOAD` command.
-An example of `pixels-load` usage is [here](https://github.com/pixelsdb/pixels#load-data).
+therefore data can not be loaded using Hive's `LOAD` command.
+An example of `pixels-sink` usage is [here](https://github.com/pixelsdb/pixels#load-data).
 
 ### Run Queries
 Before executing a query, set `hive.input.format` in the session:
