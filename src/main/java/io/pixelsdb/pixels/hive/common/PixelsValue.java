@@ -37,9 +37,8 @@ import java.util.List;
  */
 public class PixelsValue
 {
-    private static BooleanWritable nextBoolean(ColumnVector vector,
-                                               int row,
-                                               Object previous)
+    private static BooleanWritable nextBoolean(
+            ColumnVector vector, int row, Object previous)
     {
         if (vector.isRepeating())
         {
@@ -63,9 +62,8 @@ public class PixelsValue
         }
     }
 
-    private static ByteWritable nextByte(ColumnVector vector,
-                                 int row,
-                                 Object previous)
+    private static ByteWritable nextByte(
+            ColumnVector vector, int row, Object previous)
     {
         if (vector.isRepeating())
         {
@@ -89,9 +87,8 @@ public class PixelsValue
         }
     }
 
-    private static ShortWritable nextShort(ColumnVector vector,
-                                   int row,
-                                   Object previous)
+    private static ShortWritable nextShort(
+            ColumnVector vector, int row, Object previous)
     {
         if (vector.isRepeating())
         {
@@ -115,9 +112,8 @@ public class PixelsValue
         }
     }
 
-    private static IntWritable nextInt(ColumnVector vector,
-                               int row,
-                               Object previous)
+    private static IntWritable nextInt(
+            ColumnVector vector, int row, Object previous)
     {
         if (vector.isRepeating())
         {
@@ -141,9 +137,8 @@ public class PixelsValue
         }
     }
 
-    private static LongWritable nextLong(ColumnVector vector,
-                                 int row,
-                                 Object previous)
+    private static LongWritable nextLong(
+            ColumnVector vector, int row, Object previous)
     {
         if (vector.isRepeating())
         {
@@ -167,9 +162,8 @@ public class PixelsValue
         }
     }
 
-    private static FloatWritable nextFloat(ColumnVector vector,
-                                   int row,
-                                   Object previous)
+    private static FloatWritable nextFloat(
+            ColumnVector vector, int row, Object previous)
     {
         if (vector.isRepeating())
         {
@@ -193,9 +187,8 @@ public class PixelsValue
         }
     }
 
-    private static DoubleWritable nextDouble(ColumnVector vector,
-                                     int row,
-                                     Object previous)
+    private static DoubleWritable nextDouble(
+            ColumnVector vector, int row, Object previous)
     {
         if (vector.isRepeating())
         {
@@ -219,9 +212,8 @@ public class PixelsValue
         }
     }
 
-    private static Text nextString(ColumnVector vector,
-                           int row,
-                           Object previous)
+    private static Text nextString(
+            ColumnVector vector, int row, Object previous)
     {
         if (vector.isRepeating())
         {
@@ -247,9 +239,8 @@ public class PixelsValue
         }
     }
 
-    private static BytesWritable nextBinary(ColumnVector vector,
-                                    int row,
-                                    Object previous)
+    private static BytesWritable nextBinary(
+            ColumnVector vector, int row, Object previous)
     {
         if (vector.isRepeating())
         {
@@ -274,9 +265,8 @@ public class PixelsValue
         }
     }
 
-    private static DateWritable nextDate(ColumnVector vector,
-                                 int row,
-                                 Object previous)
+    private static DateWritable nextDate(
+            ColumnVector vector, int row, Object previous)
     {
         if (vector.isRepeating())
         {
@@ -301,10 +291,8 @@ public class PixelsValue
         }
     }
 
-    private static PixelsStruct nextStruct(ColumnVector vector,
-                                           int row,
-                                           TypeDescription schema,
-                                           Object previous)
+    private static PixelsStruct nextStruct(
+            ColumnVector vector, int row, TypeDescription schema, Object previous)
     {
         if (vector.isRepeating())
         {
@@ -335,10 +323,8 @@ public class PixelsValue
         }
     }
 
-    public static Writable nextValue(ColumnVector vector,
-                            int row,
-                            TypeDescription schema,
-                            Object previous)
+    public static Writable nextValue(
+            ColumnVector vector, int row, TypeDescription schema, Object previous)
     {
         switch (schema.getCategory())
         {
