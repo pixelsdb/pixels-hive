@@ -31,7 +31,7 @@ Build pixels-hive using `mvn package`. Find the `pixels-hive-*-full.jar` under t
 This is the SerDe that can be used in Hive.
 
 Ensure that Pixels and other prerequisites are installed following the instructions
-[here](https://github.com/pixelsdb/pixels#installation-in-aws). Presto is not needed as we use Hive
+[HERE](https://github.com/pixelsdb/pixels/blob/master/docs/INSTALL.md). Presto is not needed as we are using Hive
 instead as the query engine.
 
 ### Load Pixels SerDe
@@ -67,10 +67,10 @@ and `table_name` with the right schema and table name in Pixels.
 when the table is dropped.
 
 ### Load Data
-Load data by `pixels-sink`. Then it is ready to execute queries in Hive.
+Load data by `pixels-cli`. Then it is ready to execute queries in Hive.
 Currently, we have only implemented `PixelsInputFormat` for Hive,
 therefore data can not be loaded using Hive's `LOAD` command.
-An example of `pixels-sink` usage is [here](https://github.com/pixelsdb/pixels#load-data).
+An example of `pixels-cli` usage shown in the [TPC-H Evaluation](https://github.com/pixelsdb/pixels/blob/master/docs/TPC-H.md).
 
 ### Run Queries
 Before executing a query, set `hive.input.format` in the session:
