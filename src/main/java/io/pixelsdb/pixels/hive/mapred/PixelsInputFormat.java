@@ -206,7 +206,7 @@ public class PixelsInputFormat
                 splitSize = bestSplitPattern.getSplitSize();
             }
             log.error("using split size: " + splitSize);
-            int rowGroupNum = splits.getNumRowGroupInBlock();
+            int rowGroupNum = splits.getNumRowGroupInFile();
 
             // get compact paths
             String[] compactPaths;
@@ -231,8 +231,8 @@ public class PixelsInputFormat
                 ProjectionPattern projectionPattern = projectionsIndex.search(columnSet);
                 if (projectionPattern != null)
                 {
-                    log.debug("suitable projection pattern is found, path='" + projectionPattern.getPath() + '\'');
-                    compactPaths = projectionPattern.getPath().split(";");
+                    log.debug("suitable projection pattern is found");
+                    compactPaths = projectionPattern.getPaths();
                 }
                 else
                 {
@@ -379,7 +379,7 @@ public class PixelsInputFormat
     private SplitsIndex buildSplitsIndex(Ordered ordered, Splits splits, SchemaTableName schemaTableName) {
         List<String> columnOrder = ordered.getColumnOrder();
         SplitsIndex index;
-        index = new InvertedSplitsIndex(columnOrder, SplitPattern.buildPatterns(columnOrder, splits), splits.getNumRowGroupInBlock());
+        index = new InvertedSplitsIndex(columnOrder, SplitPattern.buildPatterns(columnOrder, splits), splits.getNumRowGroupInFile());
         IndexFactory.Instance().cacheSplitsIndex(schemaTableName, index);
         return index;
     }
