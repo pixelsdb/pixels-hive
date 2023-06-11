@@ -248,7 +248,7 @@ public class PixelsInputFormat
             {
                 Compact compact = layout.getCompact();
                 int cacheBorder = compact.getCacheBorder();
-                List<String> cacheColumnletOrders = compact.getColumnletOrder().subList(0, cacheBorder);
+                List<String> cacheColumnChunkOrders = compact.getColumnChunkOrder().subList(0, cacheBorder);
                 String cacheVersion;
                 EtcdUtil etcdUtil = EtcdUtil.Instance();
                 KeyValue keyValue = etcdUtil.getKeyValue(Constants.CACHE_VERSION_LITERAL);
@@ -295,7 +295,7 @@ public class PixelsInputFormat
                                     String node = fileLocations.get(path.toString());
                                     String[] hosts = {node};
                                     PixelsSplit pixelsSplit = new PixelsSplit(new Path(path), curFileRGIdx, splitSize,
-                                            true, cacheColumnletOrders, ordered.getColumnOrder(),
+                                            true, cacheColumnChunkOrders, ordered.getColumnOrder(),
                                             fileLength, hosts);
                                     pixelsSplits.add(pixelsSplit);
                                     curFileRGIdx += splitSize;
