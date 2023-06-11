@@ -208,7 +208,7 @@ public class PixelsInputFormat
             log.error("using split size: " + splitSize);
             int rowGroupNum = splits.getNumRowGroupInBlock();
 
-            // get compact path
+            // get compact paths
             String[] compactPaths;
             if (projectionReadEnabled)
             {
@@ -273,7 +273,7 @@ public class PixelsInputFormat
                         }
                         try
                         {
-                            // 3. add splits in orderedPath
+                            // 3. add splits in orderedPaths
                             List<String> orderedPaths = hdfs.listPaths(layout.getOrderedPathUris());
                             for (String path : orderedPaths)
                             {
@@ -284,7 +284,7 @@ public class PixelsInputFormat
                                         new ArrayList<>(0), ordered.getColumnOrder(), fileLength, hosts);
                                 pixelsSplits.add(pixelsSplit);
                             }
-                            // 4. add splits in compactPath
+                            // 4. add splits in compactPaths
                             int curFileRGIdx;
                             for (String path : hdfs.listPaths(compactPaths))
                             {
@@ -330,7 +330,7 @@ public class PixelsInputFormat
                     orderedFilePaths = hdfs.listPaths(layout.getOrderedPathUris());
                     compactFilePaths = hdfs.listPaths(compactPaths);
 
-                    // add splits in orderedPath
+                    // add splits in orderedFilePaths
                     for (String path : orderedFilePaths)
                     {
                         String[] hosts = hdfs.getHosts(path);
@@ -339,7 +339,7 @@ public class PixelsInputFormat
                                 hdfs.getStatus(path).getLength(), hosts);
                         pixelsSplits.add(pixelsSplit);
                     }
-                    // add splits in compactPath
+                    // add splits in compactFilePaths
                     int curFileRGIdx;
                     for (String path : compactFilePaths)
                     {
