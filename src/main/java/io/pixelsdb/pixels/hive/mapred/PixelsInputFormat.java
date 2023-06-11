@@ -19,7 +19,6 @@
  */
 package io.pixelsdb.pixels.hive.mapred;
 
-import com.alibaba.fastjson.JSON;
 import io.etcd.jetcd.KeyValue;
 import io.pixelsdb.pixels.common.layout.*;
 import io.pixelsdb.pixels.common.metadata.SchemaTableName;
@@ -170,9 +169,9 @@ public class PixelsInputFormat
         for (Layout layout : layouts)
         {
             // get index
-            int version = layout.getVersion();
+            long version = layout.getVersion();
             SchemaTableName schemaTableName = new SchemaTableName(st.getSchemaName(), st.getTableName());
-            Order order = JSON.parseObject(layout.getOrder(), Order.class);
+            Ordered ordered = layout.getOrdered();
             ColumnSet columnSet = new ColumnSet();
             for (String columnName : includedColumns)
             {
@@ -181,7 +180,7 @@ public class PixelsInputFormat
 
             // get split size
             int splitSize;
-            Splits splits = JSON.parseObject(layout.getSplits(), Splits.class);
+            Splits splits = layout.getSplits();
             if (fixedSplitSize > 0)
             {
                 splitSize = fixedSplitSize;
@@ -192,14 +191,14 @@ public class PixelsInputFormat
                 if (splitsIndex == null)
                 {
                     log.debug("splits index not exist in factory, building index...");
-                    splitsIndex = buildSplitsIndex(order, splits, schemaTableName);
+                    splitsIndex = buildSplitsIndex(ordered, splits, schemaTableName);
                 }
                 else
                 {
                     int indexVersion = splitsIndex.getVersion();
                     if (indexVersion < version) {
                         log.debug("splits index is expired, building new index...");
-                        splitsIndex = buildSplitsIndex(order, splits, schemaTableName);
+                        splitsIndex = buildSplitsIndex(ordered, splits, schemaTableName);
                     }
                 }
 
@@ -210,15 +209,15 @@ public class PixelsInputFormat
             int rowGroupNum = splits.getNumRowGroupInBlock();
 
             // get compact path
-            String compactPath;
+            String[] compactPaths;
             if (projectionReadEnabled)
             {
                 ProjectionsIndex projectionsIndex = IndexFactory.Instance().getProjectionsIndex(schemaTableName);
-                Projections projections = JSON.parseObject(layout.getProjections(), Projections.class);
+                Projections projections = layout.getProjections();
                 if (projectionsIndex == null)
                 {
                     log.debug("projections index not exist in factory, building index...");
-                    projectionsIndex = buildProjectionsIndex(order, projections, schemaTableName);
+                    projectionsIndex = buildProjectionsIndex(ordered, projections, schemaTableName);
                 }
                 else
                 {
@@ -226,28 +225,28 @@ public class PixelsInputFormat
                     if (indexVersion < version)
                     {
                         log.debug("projections index is not up-to-date, updating index...");
-                        projectionsIndex = buildProjectionsIndex(order, projections, schemaTableName);
+                        projectionsIndex = buildProjectionsIndex(ordered, projections, schemaTableName);
                     }
                 }
                 ProjectionPattern projectionPattern = projectionsIndex.search(columnSet);
                 if (projectionPattern != null)
                 {
                     log.debug("suitable projection pattern is found, path='" + projectionPattern.getPath() + '\'');
-                    compactPath = projectionPattern.getPath();
+                    compactPaths = projectionPattern.getPath().split(";");
                 }
                 else
                 {
-                    compactPath = layout.getCompactPath();
+                    compactPaths = layout.getCompactPathUris();
                 }
             }
             else
             {
-                compactPath = layout.getCompactPath();
+                compactPaths = layout.getCompactPathUris();
             }
 
             if(usingCache)
             {
-                Compact compact = layout.getCompactObject();
+                Compact compact = layout.getCompact();
                 int cacheBorder = compact.getCacheBorder();
                 List<String> cacheColumnletOrders = compact.getColumnletOrder().subList(0, cacheBorder);
                 String cacheVersion;
@@ -275,19 +274,19 @@ public class PixelsInputFormat
                         try
                         {
                             // 3. add splits in orderedPath
-                            List<String> orderedPaths = hdfs.listPaths(layout.getOrderPath());
+                            List<String> orderedPaths = hdfs.listPaths(layout.getOrderedPathUris());
                             for (String path : orderedPaths)
                             {
                                 long fileLength = hdfs.getStatus(path).getLength();
                                 String[] hosts = hdfs.getHosts(path);
                                 PixelsSplit pixelsSplit = new PixelsSplit(
                                         new Path(path), 0, 1, false,
-                                        new ArrayList<>(0), order.getColumnOrder(), fileLength, hosts);
+                                        new ArrayList<>(0), ordered.getColumnOrder(), fileLength, hosts);
                                 pixelsSplits.add(pixelsSplit);
                             }
                             // 4. add splits in compactPath
                             int curFileRGIdx;
-                            for (String path : hdfs.listPaths(compactPath))
+                            for (String path : hdfs.listPaths(compactPaths))
                             {
                                 long fileLength = hdfs.getStatus(path).getLength();
                                 curFileRGIdx = 0;
@@ -296,7 +295,7 @@ public class PixelsInputFormat
                                     String node = fileLocations.get(path.toString());
                                     String[] hosts = {node};
                                     PixelsSplit pixelsSplit = new PixelsSplit(new Path(path), curFileRGIdx, splitSize,
-                                            true, cacheColumnletOrders, order.getColumnOrder(),
+                                            true, cacheColumnletOrders, ordered.getColumnOrder(),
                                             fileLength, hosts);
                                     pixelsSplits.add(pixelsSplit);
                                     curFileRGIdx += splitSize;
@@ -324,32 +323,32 @@ public class PixelsInputFormat
             else
             {
                 log.debug("cache is disabled");
-                List<String> orderedPaths;
-                List<String> compactPaths;
+                List<String> orderedFilePaths;
+                List<String> compactFilePaths;
                 try
                 {
-                    orderedPaths = hdfs.listPaths(layout.getOrderPath());
-                    compactPaths = hdfs.listPaths(compactPath);
+                    orderedFilePaths = hdfs.listPaths(layout.getOrderedPathUris());
+                    compactFilePaths = hdfs.listPaths(compactPaths);
 
                     // add splits in orderedPath
-                    for (String path : orderedPaths)
+                    for (String path : orderedFilePaths)
                     {
                         String[] hosts = hdfs.getHosts(path);
                         PixelsSplit pixelsSplit = new PixelsSplit(new Path(path), 0, 1,
-                                false, new ArrayList<>(0), order.getColumnOrder(),
+                                false, new ArrayList<>(0), ordered.getColumnOrder(),
                                 hdfs.getStatus(path).getLength(), hosts);
                         pixelsSplits.add(pixelsSplit);
                     }
                     // add splits in compactPath
                     int curFileRGIdx;
-                    for (String path : compactPaths)
+                    for (String path : compactFilePaths)
                     {
                         curFileRGIdx = 0;
                         while (curFileRGIdx < rowGroupNum)
                         {
                             String[] hosts = hdfs.getHosts(path);
                             PixelsSplit pixelsSplit = new PixelsSplit(new Path(path), curFileRGIdx, splitSize,
-                                    false, new ArrayList<>(0), order.getColumnOrder(),
+                                    false, new ArrayList<>(0), ordered.getColumnOrder(),
                                     splitSize, hosts);
                             pixelsSplits.add(pixelsSplit);
                             curFileRGIdx += splitSize;
@@ -377,16 +376,16 @@ public class PixelsInputFormat
         return pixelsSplits.toArray(new PixelsSplit[pixelsSplits.size()]);
     }
 
-    private SplitsIndex buildSplitsIndex(Order order, Splits splits, SchemaTableName schemaTableName) {
-        List<String> columnOrder = order.getColumnOrder();
+    private SplitsIndex buildSplitsIndex(Ordered ordered, Splits splits, SchemaTableName schemaTableName) {
+        List<String> columnOrder = ordered.getColumnOrder();
         SplitsIndex index;
         index = new InvertedSplitsIndex(columnOrder, SplitPattern.buildPatterns(columnOrder, splits), splits.getNumRowGroupInBlock());
         IndexFactory.Instance().cacheSplitsIndex(schemaTableName, index);
         return index;
     }
 
-    private ProjectionsIndex buildProjectionsIndex(Order order, Projections projections, SchemaTableName schemaTableName) {
-        List<String> columnOrder = order.getColumnOrder();
+    private ProjectionsIndex buildProjectionsIndex(Ordered ordered, Projections projections, SchemaTableName schemaTableName) {
+        List<String> columnOrder = ordered.getColumnOrder();
         ProjectionsIndex index;
         index = new InvertedProjectionsIndex(columnOrder, ProjectionPattern.buildPatterns(columnOrder, projections));
         IndexFactory.Instance().cacheProjectionsIndex(schemaTableName, index);
@@ -402,9 +401,9 @@ public class PixelsInputFormat
      */
     private List<Layout> getLayouts(SchemaTableName st)
     {
-        SchemaDao schemaDao = DaoFactory.Instance().getSchemaDao("rdb");
-        TableDao tableDao = DaoFactory.Instance().getTableDao("rdb");
-        LayoutDao layoutDao = DaoFactory.Instance().getLayoutDao("rdb");
+        SchemaDao schemaDao = DaoFactory.Instance().getSchemaDao();
+        TableDao tableDao = DaoFactory.Instance().getTableDao();
+        LayoutDao layoutDao = DaoFactory.Instance().getLayoutDao();
         MetadataProto.Schema schema = schemaDao.getByName(st.getSchemaName());
         MetadataProto.Table table = tableDao.getByNameAndSchema(st.getTableName(), schema);
         List<MetadataProto.Layout> layouts = layoutDao.getByTable(table, -1,
