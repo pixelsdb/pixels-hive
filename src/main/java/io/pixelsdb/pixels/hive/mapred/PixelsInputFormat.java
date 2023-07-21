@@ -191,14 +191,14 @@ public class PixelsInputFormat
                 if (splitsIndex == null)
                 {
                     log.debug("splits index not exist in factory, building index...");
-                    splitsIndex = buildSplitsIndex(ordered, splits, schemaTableName);
+                    splitsIndex = buildSplitsIndex(version, ordered, splits, schemaTableName);
                 }
                 else
                 {
-                    int indexVersion = splitsIndex.getVersion();
+                    long indexVersion = splitsIndex.getVersion();
                     if (indexVersion < version) {
                         log.debug("splits index is expired, building new index...");
-                        splitsIndex = buildSplitsIndex(ordered, splits, schemaTableName);
+                        splitsIndex = buildSplitsIndex(version, ordered, splits, schemaTableName);
                     }
                 }
 
@@ -376,10 +376,11 @@ public class PixelsInputFormat
         return pixelsSplits.toArray(new PixelsSplit[pixelsSplits.size()]);
     }
 
-    private SplitsIndex buildSplitsIndex(Ordered ordered, Splits splits, SchemaTableName schemaTableName) {
+    private SplitsIndex buildSplitsIndex(long version, Ordered ordered, Splits splits, SchemaTableName schemaTableName) {
         List<String> columnOrder = ordered.getColumnOrder();
         SplitsIndex index;
-        index = new InvertedSplitsIndex(columnOrder, SplitPattern.buildPatterns(columnOrder, splits), splits.getNumRowGroupInFile());
+        index = new InvertedSplitsIndex(version, columnOrder, SplitPattern.buildPatterns(columnOrder, splits),
+                splits.getNumRowGroupInFile());
         IndexFactory.Instance().cacheSplitsIndex(schemaTableName, index);
         return index;
     }
