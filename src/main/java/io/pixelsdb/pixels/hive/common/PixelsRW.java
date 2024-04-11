@@ -23,6 +23,7 @@ import io.pixelsdb.pixels.cache.PixelsCacheReader;
 import io.pixelsdb.pixels.common.physical.natives.MemoryMappedFile;
 import io.pixelsdb.pixels.common.physical.Storage;
 import io.pixelsdb.pixels.common.physical.StorageFactory;
+import io.pixelsdb.pixels.core.encoding.EncodingLevel;
 import io.pixelsdb.pixels.storage.hdfs.HDFS;
 import io.pixelsdb.pixels.common.utils.ConfigFactory;
 import io.pixelsdb.pixels.core.*;
@@ -209,7 +210,7 @@ public class PixelsRW
         private int rowIndexStrideValue;
         private short blockReplication;
         private boolean blockPaddingValue;
-        private boolean encodingStrategy;
+        private EncodingLevel encodingLevel;
         private int compressionStrategy;
 
         protected WriterOptions(Properties tableProperties, Configuration conf)
@@ -219,12 +220,10 @@ public class PixelsRW
             blockSizeValue = PixelsConf.BLOCK_SIZE.getLong(tableProperties, conf);
             rowIndexStrideValue =
                     (int) PixelsConf.ROW_INDEX_STRIDE.getLong(tableProperties, conf);
-            blockReplication = (short) PixelsConf.BLOCK_REPLICATION.getLong(tableProperties,
-                    conf);
+            blockReplication = (short) PixelsConf.BLOCK_REPLICATION.getLong(tableProperties, conf);
             blockPaddingValue =
                     PixelsConf.BLOCK_PADDING.getBoolean(tableProperties, conf);
-            encodingStrategy = PixelsConf.ENCODING_STRATEGY.getBoolean(tableProperties,
-                    conf);
+            encodingLevel = PixelsConf.ENCODING_LEVEL.getEncodingLevel(tableProperties, conf);
             compressionStrategy = (int) PixelsConf.COMPRESSION_STRATEGY.getLong(tableProperties, conf);
         }
 
@@ -311,9 +310,9 @@ public class PixelsRW
         /**
          * Sets the encoding strategy that is used to encode the data.
          */
-        public WriterOptions encodingStrategy(boolean strategy)
+        public WriterOptions encodingLevel(EncodingLevel encodingLevel)
         {
-            encodingStrategy = strategy;
+            this.encodingLevel = encodingLevel;
             return this;
         }
 
@@ -380,9 +379,9 @@ public class PixelsRW
             return compressionStrategy;
         }
 
-        public boolean getEncodingStrategy()
+        public EncodingLevel getEncodingLevel()
         {
-            return encodingStrategy;
+            return encodingLevel;
         }
 
     }
@@ -437,7 +436,8 @@ public class PixelsRW
                         .setBlockSize(opts.getBlockSize())
                         .setReplication(opts.getBlockReplication())
                         .setBlockPadding(opts.getBlockPadding())
-                        .setEncoding(opts.getEncodingStrategy())
+                        .setEncodingLevel(opts.getEncodingLevel())
+                        .setNullsPadding(false)
                         .setCompressionBlockSize(opts.getCompressionStrategy())
                         .build();
     }

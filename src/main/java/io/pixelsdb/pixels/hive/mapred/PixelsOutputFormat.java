@@ -65,7 +65,7 @@ public class PixelsOutputFormat
                 .stripeSize(PixelsConf.STRIPE_SIZE.getLong(conf))
                 .blockSize(PixelsConf.BLOCK_SIZE.getLong(conf))
                 .blockPadding(PixelsConf.BLOCK_PADDING.getBoolean(conf))
-                .encodingStrategy(PixelsConf.ENCODING_STRATEGY.getBoolean(conf))
+                .encodingLevel(PixelsConf.ENCODING_LEVEL.getEncodingLevel(conf))
                 .compressionStrategy((int) PixelsConf.COMPRESSION_STRATEGY.getLong(conf));
     }
 
