@@ -19,6 +19,7 @@
  */
 package io.pixelsdb.pixels.hive.common;
 
+import io.pixelsdb.pixels.core.encoding.EncodingLevel;
 import org.apache.hadoop.conf.Configuration;
 
 import java.util.Properties;
@@ -45,10 +46,10 @@ public enum PixelsConf
     BLOCK_PADDING("pixels.block.padding", "hive.exec.pixels.default.block.padding",
             true,
             "Define whether stripes should be padded to the HDFS block boundaries."),
-    ENCODING_STRATEGY("pixels.encoding.strategy", "hive.exec.pixels.encoding.strategy",
-            true,
-            "Define the encoding strategy to use while writing data. Changing this\n" +
-                    "will only affect the light weight encoding for integers. This\n" +
+    ENCODING_LEVEL("pixels.encoding.level", "hive.exec.pixels.encoding.level",
+            EncodingLevel.EL2,
+            "Define the encoding level to use while writing data. Changing this\n" +
+                    "will only affect the light weight encoding for columns. This\n" +
                     "flag will not change the compression level of higher level\n" +
                     "compression codec (like ZLIB)."),
     COMPRESSION_STRATEGY("pixels.compression.strategy",
@@ -171,6 +172,21 @@ public enum PixelsConf
     public boolean getBoolean(Configuration conf)
     {
         return getBoolean(null, conf);
+    }
+
+    public EncodingLevel getEncodingLevel(Properties tbl, Configuration conf)
+    {
+        String value = lookupValue(tbl, conf);
+        if (value != null)
+        {
+            return EncodingLevel.from(value);
+        }
+        return (EncodingLevel) defaultValue;
+    }
+
+    public EncodingLevel getEncodingLevel(Configuration conf)
+    {
+        return getEncodingLevel(null, conf);
     }
 
     public void setBoolean(Configuration conf, boolean value)
