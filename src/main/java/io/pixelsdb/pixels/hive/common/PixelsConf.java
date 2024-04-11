@@ -48,8 +48,8 @@ public enum PixelsConf
             "Define whether stripes should be padded to the HDFS block boundaries."),
     ENCODING_LEVEL("pixels.encoding.level", "hive.exec.pixels.encoding.level",
             EncodingLevel.EL2,
-            "Define the encoding strategy to use while writing data. Changing this\n" +
-                    "will only affect the light weight encoding for integers. This\n" +
+            "Define the encoding level to use while writing data. Changing this\n" +
+                    "will only affect the light weight encoding for columns. This\n" +
                     "flag will not change the compression level of higher level\n" +
                     "compression codec (like ZLIB)."),
     COMPRESSION_STRATEGY("pixels.compression.strategy",
