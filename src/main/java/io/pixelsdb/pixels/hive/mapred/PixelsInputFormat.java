@@ -19,6 +19,7 @@
  */
 package io.pixelsdb.pixels.hive.mapred;
 
+import com.google.common.collect.ImmutableList;
 import io.etcd.jetcd.KeyValue;
 import io.pixelsdb.pixels.common.layout.*;
 import io.pixelsdb.pixels.common.metadata.SchemaTableName;
@@ -28,10 +29,7 @@ import io.pixelsdb.pixels.common.utils.Constants;
 import io.pixelsdb.pixels.common.utils.EtcdUtil;
 import io.pixelsdb.pixels.core.PixelsReader;
 import io.pixelsdb.pixels.daemon.MetadataProto;
-import io.pixelsdb.pixels.daemon.metadata.dao.DaoFactory;
-import io.pixelsdb.pixels.daemon.metadata.dao.LayoutDao;
-import io.pixelsdb.pixels.daemon.metadata.dao.SchemaDao;
-import io.pixelsdb.pixels.daemon.metadata.dao.TableDao;
+import io.pixelsdb.pixels.daemon.metadata.dao.*;
 import io.pixelsdb.pixels.hive.common.PixelsRW;
 import io.pixelsdb.pixels.hive.common.PixelsSplit;
 import io.pixelsdb.pixels.hive.common.PixelsStruct;
@@ -142,6 +140,7 @@ public class PixelsInputFormat
         boolean cacheEnabled = Boolean.parseBoolean(config.getProperty("cache.enabled"));
         boolean projectionReadEnabled = Boolean.parseBoolean(config.getProperty("projection.read.enabled"));
         int fixedSplitSize = Integer.parseInt(config.getProperty("fixed.split.size"));
+        FileDao fileDao = DaoFactory.Instance().getFileDao();
 
         /**
          * Issue #78:
@@ -209,7 +208,7 @@ public class PixelsInputFormat
             int rowGroupNum = splits.getNumRowGroupInFile();
 
             // get compact paths
-            String[] compactPaths;
+            List<io.pixelsdb.pixels.common.metadata.domain.Path> compactPaths;
             if (projectionReadEnabled)
             {
                 ProjectionsIndex projectionsIndex = IndexFactory.Instance().getProjectionsIndex(schemaTableName);
@@ -232,16 +231,22 @@ public class PixelsInputFormat
                 if (projectionPattern != null)
                 {
                     log.debug("suitable projection pattern is found");
-                    compactPaths = projectionPattern.getPaths();
+                    long[] projectionPathIds = projectionPattern.getPathIds();
+                    Map<Long, io.pixelsdb.pixels.common.metadata.domain.Path> projectionPaths = layout.getProjectionPaths();
+                    compactPaths = new ArrayList<>(projectionPathIds.length);
+                    for (long projectionPathId : projectionPathIds)
+                    {
+                        compactPaths.add(projectionPaths.get(projectionPathId));
+                    }
                 }
                 else
                 {
-                    compactPaths = layout.getCompactPathUris();
+                    compactPaths = layout.getCompactPaths();
                 }
             }
             else
             {
-                compactPaths = layout.getCompactPathUris();
+                compactPaths = layout.getCompactPaths();
             }
 
             if(usingCache)
@@ -274,7 +279,7 @@ public class PixelsInputFormat
                         try
                         {
                             // 3. add splits in orderedPaths
-                            List<String> orderedPaths = hdfs.listPaths(layout.getOrderedPathUris());
+                            List<String> orderedPaths = getFilePaths(layout.getOrderedPaths(), fileDao);
                             for (String path : orderedPaths)
                             {
                                 long fileLength = hdfs.getStatus(path).getLength();
@@ -286,7 +291,7 @@ public class PixelsInputFormat
                             }
                             // 4. add splits in compactPaths
                             int curFileRGIdx;
-                            for (String path : hdfs.listPaths(compactPaths))
+                            for (String path : getFilePaths(compactPaths, fileDao))
                             {
                                 long fileLength = hdfs.getStatus(path).getLength();
                                 curFileRGIdx = 0;
@@ -327,8 +332,8 @@ public class PixelsInputFormat
                 List<String> compactFilePaths;
                 try
                 {
-                    orderedFilePaths = hdfs.listPaths(layout.getOrderedPathUris());
-                    compactFilePaths = hdfs.listPaths(compactPaths);
+                    orderedFilePaths = getFilePaths(layout.getOrderedPaths(), fileDao);
+                    compactFilePaths = getFilePaths(compactPaths, fileDao);
 
                     // add splits in orderedFilePaths
                     for (String path : orderedFilePaths)
@@ -412,6 +417,25 @@ public class PixelsInputFormat
         List<Layout> res = new ArrayList<>();
         layouts.forEach(layout -> res.add(new Layout(layout)));
         return res;
+    }
+
+    public static List<String> getFilePaths(List<io.pixelsdb.pixels.common.metadata.domain.Path> dirPaths,
+                                            FileDao fileDao)
+    {
+        ImmutableList.Builder<String> filePaths = ImmutableList.builder();
+        for (io.pixelsdb.pixels.common.metadata.domain.Path dirPath : dirPaths)
+        {
+            String base = dirPath.getUri();
+            if (!base.endsWith("/"))
+            {
+                base += "/";
+            }
+            for (MetadataProto.File file : fileDao.getAllByPathId(dirPath.getId()))
+            {
+                filePaths.add(base + file.getName());
+            }
+        }
+        return filePaths.build();
     }
 
     /**
