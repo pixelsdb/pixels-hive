@@ -21,6 +21,7 @@ package io.pixelsdb.pixels.hive.mapred;
 
 import com.google.common.collect.ImmutableList;
 import io.etcd.jetcd.KeyValue;
+import io.pixelsdb.pixels.cache.PixelsCacheUtil;
 import io.pixelsdb.pixels.common.layout.*;
 import io.pixelsdb.pixels.common.metadata.SchemaTableName;
 import io.pixelsdb.pixels.common.metadata.domain.*;
@@ -58,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.hadoop.hive.serde2.ColumnProjectionUtils.*;
 
 /**
@@ -145,10 +147,22 @@ public class PixelsInputFormat
         /**
          * Issue #78:
          * Only try to use cache for the cached table.
-         * cacheSchema and cacheTable are not null if cacheEnabled == true.
          */
-        String cacheSchema = config.getProperty("cache.schema");
-        String cacheTable = config.getProperty("cache.table");
+        String cacheSchema = null;
+        String cacheTable = null;
+        KeyValue keyValue = EtcdUtil.Instance().getKeyValue(Constants.LAYOUT_VERSION_LITERAL);
+        if (keyValue != null)
+        {
+            String value = keyValue.getValue().toString(StandardCharsets.UTF_8);
+            // PIXELS-636: get schema and table name from etcd instead of config file.
+            String[] splits = value.split(":");
+            checkArgument(splits.length == 2, "invalid value for key '" +
+                    Constants.LAYOUT_VERSION_LITERAL + "' in etcd: " + value);
+            SchemaTableName schemaTableName = new SchemaTableName(splits[0]);
+            cacheSchema = schemaTableName.getSchemaName();
+            cacheTable = schemaTableName.getTableName();
+        }
+
         boolean usingCache = false;
         if (cacheEnabled)
         {
@@ -256,7 +270,7 @@ public class PixelsInputFormat
                 List<String> cacheColumnChunkOrders = compact.getColumnChunkOrder().subList(0, cacheBorder);
                 String cacheVersion;
                 EtcdUtil etcdUtil = EtcdUtil.Instance();
-                KeyValue keyValue = etcdUtil.getKeyValue(Constants.CACHE_VERSION_LITERAL);
+                keyValue = etcdUtil.getKeyValue(Constants.CACHE_VERSION_LITERAL);
                 if(keyValue != null)
                 {
                     // 1. get version
@@ -264,13 +278,14 @@ public class PixelsInputFormat
                     log.debug("cache version: " + cacheVersion);
                     // 2. get files of each node
                     List<KeyValue> nodeFiles = etcdUtil.getKeyValuesByPrefix(Constants.CACHE_LOCATION_LITERAL + cacheVersion);
-                    if(nodeFiles.size() > 0)
+                    if(!nodeFiles.isEmpty())
                     {
                         Map<String, String> fileLocations = new HashMap<>();
                         for (KeyValue kv : nodeFiles)
                         {
+                            String node = PixelsCacheUtil.getHostnameFromCacheLocationLiteral(
+                                    kv.getKey().toString(StandardCharsets.UTF_8));
                             String[] files = kv.getValue().toString(StandardCharsets.UTF_8).split(";");
-                            String node = kv.getKey().toString(StandardCharsets.UTF_8).split("_")[2];
                             for(String file : files)
                             {
                                 fileLocations.put(file, node);
@@ -378,7 +393,9 @@ public class PixelsInputFormat
         {
             log.error(split);
         }*/
-        return pixelsSplits.toArray(new PixelsSplit[pixelsSplits.size()]);
+        PixelsSplit[] splitsArray = new PixelsSplit[pixelsSplits.size()];
+        splitsArray = pixelsSplits.toArray(splitsArray);
+        return pixelsSplits.toArray(splitsArray);
     }
 
     private SplitsIndex buildSplitsIndex(long version, Ordered ordered, Splits splits, SchemaTableName schemaTableName) {
