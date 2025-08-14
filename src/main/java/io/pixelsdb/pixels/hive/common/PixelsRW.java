@@ -112,32 +112,32 @@ public class PixelsRW
             // if cache is enabled, create cache reader.
             if (split.isCacheEnabled() && cacheReader == null)
             {
-                MemoryMappedFile cacheFile;
-                MemoryMappedFile indexFile;
+                int zoneNum = Integer.parseInt(pixelsConf.getProperty("cache.zone.num"));
+                int swapZoneNum = Integer.parseInt(pixelsConf.getProperty("cache.zone.swap.num"));
+                long zoneSize = Long.parseLong(pixelsConf.getProperty("cache.size")) / (zoneNum - swapZoneNum);
+                long zoneIndexSize = Long.parseLong(pixelsConf.getProperty("index.size")) / (zoneNum - swapZoneNum);
+                String zoneLocationPrefix = pixelsConf.getProperty("cache.location");
+                String indexLocationPrefix = pixelsConf.getProperty("index.location");
+                List<MemoryMappedFile> cacheFiles = new java.util.ArrayList<>();
+                List<MemoryMappedFile> indexFiles = new java.util.ArrayList<>();
                 try
                 {
-                    cacheFile = new MemoryMappedFile(
-                            pixelsConf.getProperty("cache.location"),
-                            Long.parseLong(pixelsConf.getProperty("cache.size")));
-                } catch (Exception e)
+                    for (int i = 0; i < zoneNum; i++)
+                    {
+                        cacheFiles.add(new MemoryMappedFile(zoneLocationPrefix + "." + i, zoneSize));
+                        indexFiles.add(new MemoryMappedFile(indexLocationPrefix + "." + i, zoneIndexSize));
+                    }
+                    indexFiles.add(new MemoryMappedFile(indexLocationPrefix, zoneIndexSize));
+                } catch (IOException e)
                 {
-                    cacheFile = null;
-                    log.error("failed to open pixels cache file.", e);
-                }
-                try
-                {
-                    indexFile = new MemoryMappedFile(
-                            pixelsConf.getProperty("index.location"),
-                            Long.parseLong(pixelsConf.getProperty("index.size")));
-                } catch (Exception e)
-                {
-                    indexFile = null;
-                    log.error("failed to open pixels cache index.", e);
+                    cacheFiles = new ArrayList<>();
+                    indexFiles = new ArrayList<>();
+                    log.error("failed to open pixels cache and index files", e);
                 }
                 cacheReader = PixelsCacheReader
                         .newBuilder()
-                        .setCacheFile(cacheFile)
-                        .setIndexFile(indexFile)
+                        .setCacheFile(cacheFiles)
+                        .setIndexFile(indexFiles)
                         .build();
             }
         }
