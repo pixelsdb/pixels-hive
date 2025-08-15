@@ -118,26 +118,28 @@ public class PixelsRW
                 long zoneIndexSize = Long.parseLong(pixelsConf.getProperty("index.size")) / (zoneNum - swapZoneNum);
                 String zoneLocationPrefix = pixelsConf.getProperty("cache.location");
                 String indexLocationPrefix = pixelsConf.getProperty("index.location");
-                List<MemoryMappedFile> cacheFiles = new java.util.ArrayList<>();
-                List<MemoryMappedFile> indexFiles = new java.util.ArrayList<>();
+                List<MemoryMappedFile> zoneCacheFiles = new java.util.ArrayList<>();
+                List<MemoryMappedFile> zoneIndexFiles = new java.util.ArrayList<>();
+                MemoryMappedFile globalIndexFile = null;
                 try
                 {
                     for (int i = 0; i < zoneNum; i++)
                     {
-                        cacheFiles.add(new MemoryMappedFile(zoneLocationPrefix + "." + i, zoneSize));
-                        indexFiles.add(new MemoryMappedFile(indexLocationPrefix + "." + i, zoneIndexSize));
+                        zoneCacheFiles.add(new MemoryMappedFile(zoneLocationPrefix + "." + i, zoneSize));
+                        zoneIndexFiles.add(new MemoryMappedFile(indexLocationPrefix + "." + i, zoneIndexSize));
                     }
-                    indexFiles.add(new MemoryMappedFile(indexLocationPrefix, zoneIndexSize));
+                    globalIndexFile = new MemoryMappedFile(indexLocationPrefix, zoneIndexSize);
                 } catch (IOException e)
                 {
-                    cacheFiles = new ArrayList<>();
-                    indexFiles = new ArrayList<>();
+                    zoneCacheFiles = new ArrayList<>();
+                    zoneIndexFiles = new ArrayList<>();
+                    swapZoneNum = 0;
                     log.error("failed to open pixels cache and index files", e);
                 }
                 cacheReader = PixelsCacheReader
                         .newBuilder()
-                        .setCacheFile(cacheFiles)
-                        .setIndexFile(indexFiles)
+                        .setCacheFiles(zoneCacheFiles, swapZoneNum)
+                        .setIndexFiles(zoneIndexFiles, globalIndexFile)
                         .build();
             }
         }
